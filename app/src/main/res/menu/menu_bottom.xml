@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:title="홈"
+        android:icon="@drawable/ic_home_true"/>
+    <item
+        android:id="@+id/nav_record"
+        android:title="기록"
+        android:icon="@drawable/ic_record_false"/>
+    <item
+        android:id="@+id/nav_settings"
+        android:title="설정"
+        android:icon="@drawable/ic_setting_false"/>
+</menu>
