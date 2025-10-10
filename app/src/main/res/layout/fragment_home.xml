@@ -4,7 +4,10 @@
     android:id="@+id/homeRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="#F5F6FA"
+    android:paddingHorizontal="20dp"
+    android:paddingTop="20dp"
+    android:paddingBottom="20dp">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/gStart"
@@ -82,18 +85,18 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="마지막 동기화: 오전 2:32"
-            android:textSize="12sp"
+            android:textSize="13sp"
             android:textColor="#6B7280"
             app:layout_constraintTop_toBottomOf="@id/tvTitle"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="-6dp"/>
+            android:layout_marginTop="2dp"/>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/btnConnection"
             android:layout_width="wrap_content"
-            android:layout_height="32dp"
-            android:clickable="true"
+            android:layout_height="34dp"
+            android:clickable="false"
             android:focusable="true"
             app:cardCornerRadius="90dp"
             app:strokeColor="@color/green"
@@ -107,12 +110,12 @@
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:paddingHorizontal="20dp">
+                android:paddingHorizontal="14dp">
 
                 <ImageView
                     android:id="@+id/imgWatch"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
                     android:src="@drawable/ic_watch"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
@@ -134,8 +137,68 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </com.google.android.material.card.MaterialCardView>
-
     </androidx.constraintlayout.widget.ConstraintLayout>
+    
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardCurrent"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="14dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/white"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/gRow1End"
+        app:layout_constraintBottom_toTopOf="@id/gRow2End">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/tvCurrentLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="현재 심박수 | 현재 상태"
+                android:textSize="14sp"
+                android:textColor="#6B7280"/>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvCurrentBpm"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="72 bpm"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="#111827"/>
+
+                <View
+                    android:id="@+id/viewDivider"
+                    android:layout_width="1dp"
+                    android:layout_height="18dp"
+                    android:background="#D1D5DB"
+                    android:layout_marginHorizontal="10dp"/>
+
+                <TextView
+                    android:id="@+id/tvCurrentState"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="정상"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="#111827"/>
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
