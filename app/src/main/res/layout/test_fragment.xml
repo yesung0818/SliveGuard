@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/recordFragmentLayout"
+    android:background="#F5F6FA"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintBottom_toBottomOf="parent">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <TextView
+            android:id="@+id/tvHr"
+            android:text="HR — -- bpm"
+            android:textSize="30dp"
+            android:textColor="@color/black"
+            android:padding="20dp"
+            style="@style/TextAppearance.MaterialComponents.Headline6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/tvIbi"
+            android:text="IBI — -- ms"
+            android:textSize="30dp"
+            android:textColor="@color/black"
+            android:padding="20dp"
+            style="@style/TextAppearance.MaterialComponents.Body1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"/>
+
+        <TextView
+            android:id="@+id/tvIbiRecent"
+            android:text="최근 IBI 5개: -"
+            android:textSize="30dp"
+            android:textColor="@color/black"
+            android:padding="20dp"
+            style="@style/TextAppearance.MaterialComponents.Caption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"/>
+
+        <TextView
+            android:id="@+id/tvHrvScore"
+            style="@style/TextAppearance.AppCompat"
+            android:text="Hrv Score — --"
+            android:textSize="30sp"
+            android:textColor="@color/black"
+            android:padding="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"/>
+
+        <TextView
+            android:id="@+id/tvHrvBase"
+            style="@style/TextAppearance.AppCompat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="기준 RMSSD= -- ms, SDNN= -- ms"
+            android:textSize="20sp"
+            android:padding="20dp"/>
+
+        <TextView
+            android:id="@+id/tvHrvCurrent"
+            style="@style/TextAppearance.AppCompat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="현재 RMSSD= -- ms, SDNN= -- ms"
+            android:textSize="20sp"
+            android:padding="20dp"/>
+
+        <TextView
+            android:id="@+id/tvHrvStatus"
+            style="@style/TextAppearance.AppCompat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="기준 측정 중"
+            android:textSize="20sp"
+            android:padding="20dp"/>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

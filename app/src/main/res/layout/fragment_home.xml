@@ -58,87 +58,6 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.60"/>
 
-<!--    <androidx.constraintlayout.widget.ConstraintLayout-->
-<!--        android:id="@+id/boxHeader"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="0dp"-->
-<!--        app:layout_constraintStart_toStartOf="@id/gStart"-->
-<!--        app:layout_constraintEnd_toEndOf="@id/gEnd"-->
-<!--        app:layout_constraintTop_toTopOf="@id/gTop"-->
-<!--        app:layout_constraintBottom_toTopOf="@id/gRow1End">-->
-
-<!--        <TextView-->
-<!--            android:id="@+id/tvTitle"-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text="Slive Guard"-->
-<!--            android:textStyle="bold"-->
-<!--            android:textSize="36sp"-->
-<!--            android:textColor="#111827"-->
-<!--            android:gravity="center"-->
-<!--            app:layout_constraintStart_toStartOf="parent"-->
-<!--            app:layout_constraintEnd_toEndOf="parent"-->
-<!--            app:layout_constraintTop_toTopOf="parent"/>-->
-
-<!--        <TextView-->
-<!--            android:id="@+id/tvLastSync"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text="마지막 동기화: 오전 2:32"-->
-<!--            android:textSize="13sp"-->
-<!--            android:textColor="#6B7280"-->
-<!--            app:layout_constraintTop_toBottomOf="@id/tvTitle"-->
-<!--            app:layout_constraintStart_toStartOf="parent"-->
-<!--            app:layout_constraintEnd_toEndOf="parent"-->
-<!--            android:layout_marginTop="2dp"/>-->
-
-<!--        <com.google.android.material.card.MaterialCardView-->
-<!--            android:id="@+id/btnConnection"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="34dp"-->
-<!--            android:clickable="false"-->
-<!--            android:focusable="true"-->
-<!--            app:cardCornerRadius="90dp"-->
-<!--            app:strokeColor="@color/green"-->
-<!--            app:strokeWidth="2dp"-->
-<!--            android:backgroundTint="@android:color/transparent"-->
-<!--            app:layout_constraintTop_toBottomOf="@id/tvLastSync"-->
-<!--            app:layout_constraintStart_toStartOf="parent"-->
-<!--            app:layout_constraintEnd_toEndOf="parent"-->
-<!--            android:layout_marginTop="8dp">-->
-
-<!--            <androidx.constraintlayout.widget.ConstraintLayout-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="match_parent"-->
-<!--                android:paddingHorizontal="14dp">-->
-
-<!--                <ImageView-->
-<!--                    android:id="@+id/imgWatch"-->
-<!--                    android:layout_width="18dp"-->
-<!--                    android:layout_height="18dp"-->
-<!--                    android:src="@drawable/ic_watch"-->
-<!--                    app:layout_constraintStart_toStartOf="parent"-->
-<!--                    app:layout_constraintTop_toTopOf="parent"-->
-<!--                    app:layout_constraintBottom_toBottomOf="parent"-->
-<!--                    android:layout_marginEnd="4dp"/>-->
-
-<!--                <TextView-->
-<!--                    android:id="@+id/tvConnectState"-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:text="연결됨"-->
-<!--                    android:textSize="14sp"-->
-<!--                    android:textStyle="bold"-->
-<!--                    android:textColor="@color/green"-->
-<!--                    app:layout_constraintStart_toEndOf="@id/imgWatch"-->
-<!--                    app:layout_constraintEnd_toEndOf="parent"-->
-<!--                    app:layout_constraintTop_toTopOf="parent"-->
-<!--                    app:layout_constraintBottom_toBottomOf="parent"/>-->
-
-<!--            </androidx.constraintlayout.widget.ConstraintLayout>-->
-<!--        </com.google.android.material.card.MaterialCardView>-->
-<!--    </androidx.constraintlayout.widget.ConstraintLayout>-->
-
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
@@ -248,7 +167,7 @@
                     android:id="@+id/tvCurrentBpm"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="72 bpm"
+                    android:text="-- bpm"
                     android:textSize="30sp"
                     android:textStyle="bold"
                     android:textColor="#111827"/>
@@ -309,7 +228,7 @@
                     android:id="@+id/tvAvgHr"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="68 bpm"
+                    android:text="-- bpm"
                     android:textSize="30sp"
                     android:textStyle="bold"
                     android:textColor="#111827"
@@ -345,7 +264,7 @@
                     android:id="@+id/tvRestHr"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="60 bpm"
+                    android:text="-- bpm"
                     android:textSize="30sp"
                     android:textStyle="bold"
                     android:textColor="#111827"

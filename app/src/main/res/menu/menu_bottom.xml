@@ -3,13 +3,15 @@
     <item
         android:id="@+id/nav_home"
         android:title="홈"
-        android:icon="@drawable/ic_home_true"/>
+        android:icon="@drawable/nav_home_icon"/>
+
     <item
         android:id="@+id/nav_record"
         android:title="기록"
-        android:icon="@drawable/ic_record_false"/>
+        android:icon="@drawable/nav_record_icon"/>
+
     <item
         android:id="@+id/nav_settings"
         android:title="설정"
-        android:icon="@drawable/ic_setting_false"/>
+        android:icon="@drawable/nav_setting_icon"/>
 </menu>

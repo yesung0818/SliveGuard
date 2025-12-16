@@ -3,4 +3,15 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="green">#32CD32</color>
+    <color name="red">#FF3B30</color>
+
+    <color name="primary">#4D7CFF</color>
+    <color name="primary_text">#222222</color>
+    <color name="bg_login">#F4F5F9</color>
+    <color name="divider">#DDDDDD</color>
+    <color name="hint_text">#9C9C9C</color>
+
+    <color name="kakao_yellow">#FEE500</color>
+    <color name="kakao_text">#191600</color>
+
 </resources>

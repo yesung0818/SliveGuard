@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="8dp">
+
+    <TextView
+        android:id="@+id/tvTime"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="10:20"
+        android:textSize="14sp"
+        android:textColor="#222222"/>
+
+    <TextView
+        android:id="@+id/tvHr"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="76 bpm"
+        android:textSize="14sp"
+        android:textColor="#222222"
+        android:gravity="center"/>
+
+    <TextView
+        android:id="@+id/tvStage"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="정상"
+        android:textSize="14sp"
+        android:textColor="#222222"
+        android:gravity="end"/>
+</LinearLayout>

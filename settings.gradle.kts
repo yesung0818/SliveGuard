@@ -8,8 +8,13 @@ pluginManagement {
             }
         }
         mavenCentral()
-        maven("https://jitpack.io")
+//        maven("https://jitpack.io")
+        maven("https://company/com/maven2")
+        mavenLocal()
         gradlePluginPortal()
+        flatDir {
+            dirs("libs")
+        }
     }
 }
 dependencyResolutionManagement {
@@ -24,4 +29,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "SliveGuardProject"
 include(":app")
- 
+include(":wear")
