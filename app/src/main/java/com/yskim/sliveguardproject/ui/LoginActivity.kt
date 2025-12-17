@@ -1,5 +1,6 @@
 package com.yskim.sliveguardproject.ui
 
+import android.R.attr.data
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -23,6 +24,7 @@ import com.yskim.sliveguardproject.login.SessionManager
 import com.yskim.sliveguardproject.network.auth.AuthApiClient
 import com.yskim.sliveguardproject.network.auth.KakaoLoginRequest
 import com.yskim.sliveguardproject.network.auth.LoginRequest
+import com.yskim.sliveguardproject.network.auth.StartStopMeasurementRequest
 import com.yskim.sliveguardproject.service.DrowsyMonitoringService
 import kotlinx.coroutines.launch
 import java.util.jar.Manifest
@@ -92,18 +94,13 @@ class LoginActivity: AppCompatActivity() {
                     ?: id
 
                 onLoginSuccessCommon(
-//                    loginType = "NORMAL",
+                    loginType = SessionManager.LoginType.NORMAL,
                     loginId = id,
                     userName = userName
                 )
 
 //                val accessToken = (data["accessToken"] as? String).orEmpty()
 
-
-//                onLoginSuccess(
-//                    accessToken = res.accessToken,
-//                    userName = res.user.name
-//                )
             } catch (e: Exception) {
                 Log.e("LOGIN", "login error", e)
                 Toast.makeText(this@LoginActivity, "로그인 실패", Toast.LENGTH_SHORT).show()
@@ -186,6 +183,7 @@ class LoginActivity: AppCompatActivity() {
             SessionManager.saveKakaoAccessToken(this, token.accessToken)
 
             onLoginSuccessCommon(
+                loginType = SessionManager.LoginType.KAKAO,
                 loginId = kakaoUserId,   // ★ 핵심
                 userName = name
             )
@@ -211,12 +209,13 @@ class LoginActivity: AppCompatActivity() {
 //    }
 
     private fun onLoginSuccessCommon(
-//        loginType: String,
+        loginType: SessionManager.LoginType,
         loginId: String,
         userName: String,
 //        kakaoAccessToken: String? = null
     ) {
-        SessionManager.saveLoginType(this, SessionManager.LoginType.KAKAO.name)
+//        SessionManager.saveLoginType(this, SessionManager.LoginType.KAKAO.name)
+        SessionManager.saveLoginType(this, loginType.name)
         SessionManager.saveLoginId(this, loginId)
         SessionManager.saveUserName(this, userName)
 

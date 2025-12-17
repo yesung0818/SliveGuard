@@ -58,13 +58,16 @@
             android:name=".wear.WearListenerService"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
-                <data android:scheme="wear" android:host="*" android:path="/hr" />
+                <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
             </intent-filter>
-            <intent-filter>
-                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
-                <data android:scheme="wear" android:host="*" android:path="/ibi" />
-            </intent-filter>
+<!--            <intent-filter>-->
+<!--                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />-->
+<!--                <data android:scheme="wear" android:host="*" android:path="/hr" />-->
+<!--            </intent-filter>-->
+<!--            <intent-filter>-->
+<!--                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />-->
+<!--                <data android:scheme="wear" android:host="*" android:path="/ibi" />-->
+<!--            </intent-filter>-->
         </service>
 
         <service android:name=".service.DrowsyMonitoringService"

@@ -80,7 +80,7 @@ object HrvBus {
             return
         }
         if (prev != null && kotlin.math.abs(intervalMs - prev) > 400) {
-            Log.d("HRV_BASE", "skip IBI (sudden jump) = $intervalMs (prev=$prev)")
+//            Log.d("HRV_BASE", "skip IBI (sudden jump) = $intervalMs (prev=$prev)")
             return
         }
 
@@ -90,7 +90,7 @@ object HrvBus {
 
         // 1) baseline 수집 (처음 3분)
         if (!baselineReady) {
-            Log.d("HRV_BASE", "baseline add IBI = $intervalL")
+//            Log.d("HRV_BASE", "baseline add IBI = $intervalL")
             baselineIbis.add(intervalMs)
             baselineTotalMs += intervalL
             if (baselineTotalMs >= BASELINE_BURATION_MS && baselineIbis.size >= 5) {

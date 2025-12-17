@@ -13,6 +13,8 @@ object SessionManager {
     private const val KEY_LOGIN_TYPE = "login_type"
     private const val KEY_KAKAO_ACCESS_TOKEN = "kakao_access_token"
 
+    private const val KEY_IS_MEASURING = "is_measuring"
+
     enum class LoginType {
         NORMAL,
         KAKAO
@@ -92,5 +94,15 @@ object SessionManager {
     fun getProfileImageUri(context: Context): String? {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         return prefs.getString(KEY_PROFILE_IMAGE_URI, null)
+    }
+
+    fun setMeasuring(ctx: Context, v: Boolean) {
+        val prefs = ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_IS_MEASURING, v).apply()
+    }
+
+    fun isMeasuring(ctx: Context): Boolean {
+        val prefs = ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_IS_MEASURING, false)
     }
 }

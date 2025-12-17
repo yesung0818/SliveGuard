@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityHrBinding.inflate(layoutInflater)
-        setContentView(binding.root)   // ✅ XML 레이아웃 사용
+        setContentView(binding.root)
 
         Log.d(TAG, "SDK_INT=${Build.VERSION.SDK_INT}")
 
@@ -97,6 +97,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // OS 버전에 따라 모드 분기
+//        if (Build.VERSION.SDK_INT <= 34) {
         if (Build.VERSION.SDK_INT <= 32) {
             // 워치4 → 서비스 모드 (화면 꺼져도)
             canBackgroundMeasure = true
@@ -191,6 +192,9 @@ class MainActivity : AppCompatActivity() {
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
+        WearTx.sendMessage(this, "/start_measure", ByteArray(0))
+        WearTx.sendDeviceInfo(this)
+
         repo.start { bpm ->
             runOnUiThread { binding.tvHr.text = "$bpm bpm" }
             messenger.sendHr(bpm)
@@ -216,6 +220,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun stopForegroundOnlyMode() {
         repo.stop()
+        WearTx.sendMessage(this, "/stop_measure", ByteArray(0))
 //        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         binding.tvStatus.text = "정지됨"
         binding.btnToggle.text = "측정 시작"

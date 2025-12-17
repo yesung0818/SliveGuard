@@ -70,6 +70,11 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    override fun onDestroy() {
+        DrowsyMonitoringService.stop(this)
+        super.onDestroy()
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString("currentTag", currentTag)
         super.onSaveInstanceState(outState)

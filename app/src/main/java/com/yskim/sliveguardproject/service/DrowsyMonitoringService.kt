@@ -55,13 +55,17 @@ class DrowsyMonitoringService: Service() {
         const val ACTION_STOP_MEASURE = "ACTION_STOP_MEASURE"
 
         fun startMeasure(ctx: Context) {
-            val i  = Intent(ctx, DrowsyMonitoringService::class.java).apply { action = ACTION_START_MEASURE}
-            ContextCompat.startForegroundService(ctx, i)
+            val i  = Intent(ctx, DrowsyMonitoringService::class.java).apply {
+                action = ACTION_START_MEASURE
+            }
+            ctx.startService(i)
         }
 
         fun stopMeasure(ctx: Context) {
-            val i  = Intent(ctx, DrowsyMonitoringService::class.java).apply { action = ACTION_STOP_MEASURE}
-            ContextCompat.startForegroundService(ctx, i)
+            val i  = Intent(ctx, DrowsyMonitoringService::class.java).apply {
+                action = ACTION_STOP_MEASURE
+            }
+            ctx.startService(i)
         }
 
         fun start(ctx: Context) {
@@ -86,16 +90,19 @@ class DrowsyMonitoringService: Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("DROWSY", "onStartCommand action=${intent?.action}")
         when (intent?.action) {
             ACTION_START_MEASURE -> {
                 if (!loopsRunning) {
                     if (measureJob?.isActive == true) return START_STICKY
+                    SessionManager.setMeasuring(this, true)
                     loopsRunning = true
                     measureJob = scope.launch { startLoops() }
 //                    startLoops()
                 }
             }
             ACTION_STOP_MEASURE -> {
+                SessionManager.setMeasuring(this, false)
                 loopsRunning = false
                 measureJob?.cancel()
                 measureJob = null

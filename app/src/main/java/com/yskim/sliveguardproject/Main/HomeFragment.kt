@@ -10,6 +10,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.yskim.sliveguardproject.databinding.FragmentHomeBinding
+import com.yskim.sliveguardproject.login.SessionManager
 import com.yskim.sliveguardproject.wear.HrBus
 import com.yskim.sliveguardproject.wear.HrvBus
 import kotlinx.coroutines.launch
@@ -59,27 +60,21 @@ class HomeFragment : Fragment() {
 
                 launch {
                     HrvBus.state.collect { st ->
-                        if (!st.isBaselineReady) {
-                            binding.tvDrowsyStatus.text = "준비 중 (베이스라인 측정 중, 약 3분)"
-                        } else {
-                            binding.tvDrowsyStatus.text = "측정 중"
+                        val measuring = SessionManager.isMeasuring(requireContext())
+                        binding.tvDrowsyStatus.text = when {
+                            !measuring -> "대기 중 (워치에서 측정 시작을 누르세요)"
+                            !st.isBaselineReady -> "준비 중 (베이스라인 측정 중, 약 3분)"
+                            else -> "측정 중"
                         }
+//                        if (!st.isBaselineReady) {
+//                            binding.tvDrowsyStatus.text = "준비 중 (베이스라인 측정 중, 약 3분)"
+//                        } else {
+//                            binding.tvDrowsyStatus.text = "측정 중"
+//                        }
                     }
                 }
             }
         }
-
-//        viewLifecycleOwner.lifecycleScope.launch {
-//            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-//                HrvBus.state.collect { st ->
-//                    if (!st.isBaselineReady) {
-//                        binding.tvDrowsyStatus.text = "준비 중 (베이스라인 측정 중, 약 3분)"
-//                    } else {
-//                        binding.tvDrowsyStatus.text = "측정 중"
-//                    }
-//                }
-//            }
-//        }
     }
 
     override fun onDestroyView() {

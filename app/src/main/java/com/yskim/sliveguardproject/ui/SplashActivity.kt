@@ -18,21 +18,13 @@ class SplashActivity: AppCompatActivity() {
 
         val accessToken = SessionManager.getAccessToken(this)
 
-//        if (!loginId.isNullOrEmpty()) {
-//            DrowsyMonitoringService.start(this)
-//            startActivity(this, MainActivity::class.java)
-//        } else {
-//            startActivity(this, LoginActivity::class.java)
-//        }
-
-//        val nextIntent = if (token.isNullOrEmpty()) {
         val nextIntent = if (loginId.isNullOrEmpty()) {
             Intent(this, LoginActivity::class.java)
         } else {
-            if (loginType == SessionManager.LoginType.NORMAL.name && !accessToken.isNullOrBlank()) {
-                DrowsyMonitoringService.start(this)
+//            if (?loginType == SessionManager.LoginType.NORMAL.name && !accessToken.isNullOrBlank()) {
+            if (loginType == SessionManager.LoginType.NORMAL.name) {
+                    DrowsyMonitoringService.start(this)
             }
-//            DrowsyMonitoringService.start(this)
             Intent(this, MainActivity::class.java)
         }
 

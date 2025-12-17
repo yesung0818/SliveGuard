@@ -29,15 +29,17 @@ class WearListenerService : WearableListenerService() {
             }
     }
     override fun onMessageReceived(e: MessageEvent) {
-        Log.d("WearRx", "path=${e.path} size=${e.data?.size ?: -1}")
+//        Log.d("WearRx", "path=${e.path} size=${e.data?.size ?: -1}")
+//        Log.d("WearRx", "recv path=${e.path} -> startMeasure() 호출")
         when (e.path) {
             "/start_measure" -> {
-//                Log.d("HRV", "Baseline reset by WATCH command")
+                Log.d("WearRx", "Baseline reset by WATCH command")
 //                HrvBus.reset()
-                DrowsyMonitoringService.startMeasure(this)
+                DrowsyMonitoringService.startMeasure(applicationContext)
             }
             "/stop_measure" -> {
-                DrowsyMonitoringService.stopMeasure(this)
+                Log.d("WearRx", "STOP_MEASURE from watch")
+                DrowsyMonitoringService.stopMeasure(applicationContext)
             }
 
             "/hr" -> safeHandleHr(e.data)
@@ -48,7 +50,7 @@ class WearListenerService : WearableListenerService() {
                 DeviceBus.updateFromJson(json)
             }
         }
-        Log.d(TAG, "onMessageReceived path=${e.path} from=${e.sourceNodeId} size=${e.data?.size}")
+//        Log.d(TAG, "onMessageReceived path=${e.path} from=${e.sourceNodeId} size=${e.data?.size}")
         if (e.path.startsWith("/hr")) {
 //            val raw = e.data?.decodeToString()
 //            val bpm = raw?.toIntOrNull()

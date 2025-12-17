@@ -1,5 +1,7 @@
 package com.yskim.sliveguardproject.network.auth
 
+import com.google.gson.annotations.SerializedName
+
 data class LoginRequest(
     val loginId: String,
     val password: String
@@ -38,7 +40,8 @@ data class CheckDuplicateIdRequest(
 
 data class SimpleOkResponse(
     val ok: Boolean,
-    val message: String,
+    @SerializedName("msg") val msg: String? = null,
+    val message: String? = null,
     val userId: String? = null
 )
 
@@ -78,11 +81,13 @@ data class StartStopMeasurementRequest(
 
 data class VideoScoreResponse(
     val ok: Boolean,
-    val message: String? = null,
     val s_video: Double? = null,
-    val userId: String? = null,
     val ts: Long? = null,
-    val updatedAt: String? = null
+    val userId: String? = null,
+    @SerializedName("updatedAt") val updatedAt: String? = null,
+    @SerializedName("msg") val msg: String? = null,
+    val message: String? = null,
+//    val updatedAt: String? = null
 )
 
 data class VideoScorePostRequest(
