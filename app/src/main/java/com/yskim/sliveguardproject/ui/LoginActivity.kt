@@ -182,7 +182,8 @@ class LoginActivity: AppCompatActivity() {
             val kakaoUserId = user.id?.toString() ?: return@me
             val name = user.kakaoAccount?.profile?.nickname ?: "카카오사용자"
 
-            SessionManager.saveAccessToken(this, token.accessToken)
+//            SessionManager.saveAccessToken(this, token.accessToken)
+            SessionManager.saveKakaoAccessToken(this, token.accessToken)
 
             onLoginSuccessCommon(
                 loginId = kakaoUserId,   // ★ 핵심
@@ -215,7 +216,7 @@ class LoginActivity: AppCompatActivity() {
         userName: String,
 //        kakaoAccessToken: String? = null
     ) {
-//        SessionManager.saveLoginType(this, loginType)
+        SessionManager.saveLoginType(this, SessionManager.LoginType.KAKAO.name)
         SessionManager.saveLoginId(this, loginId)
         SessionManager.saveUserName(this, userName)
 

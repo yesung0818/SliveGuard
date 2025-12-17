@@ -6,6 +6,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.yskim.sliveguardproject.R
 import com.yskim.sliveguardproject.databinding.ItemRecordRowBinding
 
+data class RecordRow(
+    val time: String,
+    val hr: Int,
+    val stage: String,
+    val isAlert: Boolean
+)
+
 class RecordAdapter: RecyclerView.Adapter<RecordAdapter.VH>() {
     private val items = mutableListOf<RecordRow>()
 

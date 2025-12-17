@@ -38,7 +38,8 @@ data class CheckDuplicateIdRequest(
 
 data class SimpleOkResponse(
     val ok: Boolean,
-    val message: String
+    val message: String,
+    val userId: String? = null
 )
 
 data class ApiResponse(
@@ -49,4 +50,42 @@ data class ApiResponse(
 
 data class DeleteUserRequest(
     val loginId: String
+)
+
+//data class VideoScoreItem(
+//    val ts: Long,
+//    val s_video: Double
+//)
+//
+//data class VideoScoreResponse(
+//    val items: List<VideoScoreItem>
+//)
+
+data class VideoScoreRequest(
+    val userId: String,
+    val ts: Long
+)
+
+data class StartStopMeasurementRequest(
+    val userId: String
+)
+
+//data class VideoScoreResponse(
+//    val ok: Boolean,
+//    val s_video: Double?,
+//    val ts: Long?
+//)
+
+data class VideoScoreResponse(
+    val ok: Boolean,
+    val message: String? = null,
+    val s_video: Double? = null,
+    val userId: String? = null,
+    val ts: Long? = null,
+    val updatedAt: String? = null
+)
+
+data class VideoScorePostRequest(
+    val userId: String,
+    val ts: Long
 )

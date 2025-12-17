@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
+import com.yskim.sliveguardproject.service.DrowsyMonitoringService
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -31,8 +32,12 @@ class WearListenerService : WearableListenerService() {
         Log.d("WearRx", "path=${e.path} size=${e.data?.size ?: -1}")
         when (e.path) {
             "/start_measure" -> {
-                Log.d("HRV", "Baseline reset by WATCH command")
-                HrvBus.reset()
+//                Log.d("HRV", "Baseline reset by WATCH command")
+//                HrvBus.reset()
+                DrowsyMonitoringService.startMeasure(this)
+            }
+            "/stop_measure" -> {
+                DrowsyMonitoringService.stopMeasure(this)
             }
 
             "/hr" -> safeHandleHr(e.data)

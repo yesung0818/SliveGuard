@@ -14,7 +14,9 @@ class SplashActivity: AppCompatActivity() {
 
         val loginId = SessionManager.getLoginId(this)
 
-        val token = SessionManager.getAccessToken(this)
+        val loginType = SessionManager.getLoginType(this)
+
+        val accessToken = SessionManager.getAccessToken(this)
 
 //        if (!loginId.isNullOrEmpty()) {
 //            DrowsyMonitoringService.start(this)
@@ -25,9 +27,12 @@ class SplashActivity: AppCompatActivity() {
 
 //        val nextIntent = if (token.isNullOrEmpty()) {
         val nextIntent = if (loginId.isNullOrEmpty()) {
-                Intent(this, LoginActivity::class.java)
+            Intent(this, LoginActivity::class.java)
         } else {
-            DrowsyMonitoringService.start(this)
+            if (loginType == SessionManager.LoginType.NORMAL.name && !accessToken.isNullOrBlank()) {
+                DrowsyMonitoringService.start(this)
+            }
+//            DrowsyMonitoringService.start(this)
             Intent(this, MainActivity::class.java)
         }
 

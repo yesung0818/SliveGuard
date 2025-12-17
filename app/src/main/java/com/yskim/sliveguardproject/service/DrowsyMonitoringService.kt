@@ -10,19 +10,25 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.yskim.sliveguardproject.R
 import com.yskim.sliveguardproject.login.SessionManager
-import com.yskim.sliveguardproject.network.video.VideoApiClient
+import com.yskim.sliveguardproject.network.auth.AuthApiClient
+import com.yskim.sliveguardproject.network.auth.StartStopMeasurementRequest
+import com.yskim.sliveguardproject.network.auth.VideoScorePostRequest
 import com.yskim.sliveguardproject.wear.HrvBus
+import com.yskim.sliveguardproject.wear.PhoneWearTx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.log
 import kotlin.math.max
 
 class DrowsyMonitoringService: Service() {
@@ -34,17 +40,34 @@ class DrowsyMonitoringService: Service() {
 
     private var lastVideoTs: Long = 0L
 
+    private var loopsRunning = false
+
+    private var measureJob: kotlinx.coroutines.Job? = null
+
     companion object {
         private const val CHANNEL_ID = "monitoring"
         private const val NOTI_ID = 1001
 
-        private const val POLL_MS = 2000L          // 서버 s_video 갱신 주기에 맞춰 조절
+        private const val POLL_MS = 1000L          // 서버 s_video 갱신 주기에 맞춰 조절
         private const val TOLERANCE_MS = 3000L     // 시간 매칭 허용오차(예: 3초)
+
+        const val ACTION_START_MEASURE = "ACTION_START_MEASURE"
+        const val ACTION_STOP_MEASURE = "ACTION_STOP_MEASURE"
+
+        fun startMeasure(ctx: Context) {
+            val i  = Intent(ctx, DrowsyMonitoringService::class.java).apply { action = ACTION_START_MEASURE}
+            ContextCompat.startForegroundService(ctx, i)
+        }
+
+        fun stopMeasure(ctx: Context) {
+            val i  = Intent(ctx, DrowsyMonitoringService::class.java).apply { action = ACTION_STOP_MEASURE}
+            ContextCompat.startForegroundService(ctx, i)
+        }
 
         fun start(ctx: Context) {
             val i = Intent(ctx, DrowsyMonitoringService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                androidx.core.content.ContextCompat.startForegroundService(ctx, i)
+                ContextCompat.startForegroundService(ctx, i)
             } else {
                 ctx.startService(i)
             }
@@ -57,8 +80,34 @@ class DrowsyMonitoringService: Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(NOTI_ID, buildNotification("졸음 모니터링 실행 중"))
-        startLoops()
+//        startForeground(NOTI_ID, buildNotification("졸음 모니터링 실행 중"))
+        startForeground(NOTI_ID, buildNotification("대기 중 (워치 시작 버튼을 누르세요)"))
+//        startLoops()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when (intent?.action) {
+            ACTION_START_MEASURE -> {
+                if (!loopsRunning) {
+                    if (measureJob?.isActive == true) return START_STICKY
+                    loopsRunning = true
+                    measureJob = scope.launch { startLoops() }
+//                    startLoops()
+                }
+            }
+            ACTION_STOP_MEASURE -> {
+                loopsRunning = false
+                measureJob?.cancel()
+                measureJob = null
+
+                val loginId = SessionManager.getLoginId(this)
+                if (!loginId.isNullOrBlank()) {
+                    scope.launch(Dispatchers.IO) { callStopMeasurement(loginId) }
+                }
+                updateNotification("대기 중 (워치 시작 버튼을 누르세요)")
+            }
+        }
+        return START_STICKY
     }
 
     override fun onDestroy() {
@@ -68,22 +117,22 @@ class DrowsyMonitoringService: Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun startLoops() {
-//        val token = SessionManager.getAccessToken(this)
-//        if (token.isNullOrEmpty()) {
-//            stopSelf()
-//            Log.d("DROWSY", "token=$token")
-//            return
-//        }
-        val loginId = SessionManager.getLoginId(this)
+    private suspend fun startLoops() = coroutineScope {
+        val loginId = SessionManager.getLoginId(this@DrowsyMonitoringService)
         if (loginId.isNullOrEmpty()) {
             Log.d("DROWSY", "loginId missing -> stop service")
             stopSelf()
-            return
+            return@coroutineScope
         }
 
+//        scope.launch(Dispatchers.IO) {
+//            callStartMeasurement(loginId)
+//        }
+        launch(Dispatchers.IO) { callStartMeasurement(loginId) }
+
         // 1) s_hrv 계산 및 버퍼링 루프
-        scope.launch {
+//        scope.launch {
+        launch {
             HrvBus.state.collect { st ->
                 val s = st.sHrv ?: return@collect
                 val ts = st.sHrvTsMs ?: return@collect
@@ -91,21 +140,68 @@ class DrowsyMonitoringService: Service() {
             }
         }
 
-        // 2) 서버에서 s_video 지속 조회 (polling)
-        scope.launch {
-            while (isActive) {
-                try {
-                    val res = VideoApiClient.api.getScores(afterTs = lastVideoTs)
-                    for (it in res.items) {
-                        lastVideoTs = maxOf(lastVideoTs, it.ts)
-                        onVideoSample(it.ts, it.s_video)
-                    }
+
+
+        // 2) 서버에서 s_video 지속 조회 (polling) - 문서(최신) 방식
+//        scope.launch(Dispatchers.IO) {
+        launch(Dispatchers.IO) {
+            var lastStartRetryAt = 0L
+
+            //로그용
+            var lastBaselineLogAt = 0L
+
+            while (isActive && loopsRunning) {
+                val now = System.currentTimeMillis()
+                val res = try {
+                    AuthApiClient.api.getVideoScore(loginId, now)
                 } catch (_: Exception) {
-                    // 네트워크 실패 시 다음 루프로 (필요하면 backoff)
+                    AuthApiClient.api.postVideoScore(VideoScorePostRequest(loginId, now))
+                }
+
+                val videoTs = res.ts ?: now
+
+                when {
+                    res.ok && res.s_video != null -> {
+                        onVideoSample(videoTs, res.s_video)
+                    }
+
+                    res.ok && res.s_video == null -> {
+                        //로그용
+                        if (now - lastBaselineLogAt > 5000L) {
+                            lastBaselineLogAt = now
+                            Log.d("DROWSY", "baseline collecting: ${res.message}")
+                        }
+                    }
+
+                    !res.ok -> {
+                        val nowMs = System.currentTimeMillis()
+                        if (nowMs - lastStartRetryAt > 5000L) {
+                            lastStartRetryAt = nowMs
+                            callStartMeasurement(loginId)
+                        }
+                        Log.w("DROWSY", "video-score not ready: ${res.message}")
+                    }
+
                 }
                 delay(POLL_MS)
+//                if (res.ok) {
+//                    val sv = res.s_video
+//                    if (sv != null) {
+//                        val videoTs = res.ts ?: now
+//                        onVideoSample(videoTs, sv)
+//                    }
+//                } else {
+//                    if (now - lastStartRetryAt > 5000L) {
+//                        lastStartRetryAt = now
+//                        launch(Dispatchers.IO) {
+//                            callStartMeasurement(loginId)
+//                        }
+//                    }
+//                }
+
             }
         }
+
     }
 
     private fun addHrvSample(ts: Long, v: Double) {
@@ -114,6 +210,9 @@ class DrowsyMonitoringService: Service() {
             hrvBuf.addLast(Sample(ts, v))
         }
     }
+
+    private var lastSentState: String? = null
+    private var lastSentAt = 0L
 
     private fun onVideoSample(videoTs: Long, sVideo: Double) {
         val h = nearestHrv(videoTs) ?: return
@@ -130,6 +229,17 @@ class DrowsyMonitoringService: Service() {
 
         // 알림 업데이트
         updateNotification("상태: $state (score=${"%.2f".format(score)})")
+
+        val now = System.currentTimeMillis()
+        val shouldSend = (state != lastSentState) || (now - lastSentAt > 5000L)
+        if (shouldSend) {
+            lastSentState = state
+            lastSentAt = now
+            val payload = "$state|${"%.2f".format(score)}|$videoTs"
+            PhoneWearTx.sendToWatch(applicationContext, "/drowsy_state", payload.toByteArray())
+
+        }
+
     }
 
     private fun nearestHrv(ts: Long): Sample? {
@@ -144,6 +254,27 @@ class DrowsyMonitoringService: Service() {
             return best
         }
     }
+
+
+    private suspend fun callStartMeasurement(userId: String) {
+        try {
+            val res = AuthApiClient.api.startMeasurement(StartStopMeasurementRequest(userId))
+            Log.d("DROWSY", "startMeasurement ok=${res.ok} msg=${res.message}")
+        } catch (e: Exception) {
+            Log.e("DROWSY", "startMeasurement failed", e)
+        }
+    }
+
+    private suspend fun callStopMeasurement(userId: String) {
+        try {
+            val res = AuthApiClient.api.stopMeasurement(StartStopMeasurementRequest(userId))
+            Log.d("DROWSY", "stopMeasurement ok=${res.ok} msg=${res.message}")
+        } catch (e: Exception) {
+            Log.e("DROWSY", "stopMeasurement failed", e)
+        }
+    }
+
+
 
     private fun buildNotification(text: String): Notification {
         ensureChannel()

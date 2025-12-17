@@ -178,6 +178,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun stopServiceMode() {
         stopService(Intent(this, VitalsService::class.java))
+
+        WearTx.sendMessage(this, "/stop_measure", ByteArray(0))
+
         binding.tvStatus.text = "정지됨"
         binding.btnToggle.text = "측정 시작"
         isMeasuring = false

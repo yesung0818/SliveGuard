@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.yskim.sliveguardproject.databinding.FragmentHomeBinding
 import com.yskim.sliveguardproject.wear.HrBus
+import com.yskim.sliveguardproject.wear.HrvBus
 import kotlinx.coroutines.launch
 import java.util.Date
 import java.util.Locale
@@ -37,31 +38,52 @@ class HomeFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                HrBus.bpm.collect { bpm ->
-                    bpm?.let {
-                        binding.tvCurrentBpm.text = "$it bpm"
-                        binding.tvLastSync.text = "마지막 동기화: " + SimpleDateFormat("a h:mm", Locale.KOREA).format(Date())
-                        sum += it; count++
-                        if (it > maxHr) maxHr = it
-                        binding.tvAvgHr.text = "${sum / count} bpm"
-                        binding.tvRestHr.text = "$maxHr bpm"
-                        binding.tvCurrentState.text = when {
-                            it < 60 -> "낮음"
-                            it < 100 -> "정상"
-                            else -> "높음"
+
+                launch {
+                    HrBus.bpm.collect { bpm ->
+                        bpm?.let {
+                            binding.tvCurrentBpm.text = "$it bpm"
+                            binding.tvLastSync.text = "마지막 동기화: " + SimpleDateFormat("a h:mm", Locale.KOREA).format(Date())
+                            sum += it; count++
+                            if (it > maxHr) maxHr = it
+                            binding.tvAvgHr.text = "${sum / count} bpm"
+                            binding.tvRestHr.text = "$maxHr bpm"
+                            binding.tvCurrentState.text = when {
+                                it < 60 -> "낮음"
+                                it < 100 -> "정상"
+                                else -> "높음"
+                            }
+                        }
+                    }
+                }
+
+                launch {
+                    HrvBus.state.collect { st ->
+                        if (!st.isBaselineReady) {
+                            binding.tvDrowsyStatus.text = "준비 중 (베이스라인 측정 중, 약 3분)"
+                        } else {
+                            binding.tvDrowsyStatus.text = "측정 중"
                         }
                     }
                 }
             }
         }
 
-
+//        viewLifecycleOwner.lifecycleScope.launch {
+//            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+//                HrvBus.state.collect { st ->
+//                    if (!st.isBaselineReady) {
+//                        binding.tvDrowsyStatus.text = "준비 중 (베이스라인 측정 중, 약 3분)"
+//                    } else {
+//                        binding.tvDrowsyStatus.text = "측정 중"
+//                    }
+//                }
+//            }
+//        }
     }
 
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
     }
-
-
 }

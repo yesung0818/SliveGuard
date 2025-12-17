@@ -29,7 +29,7 @@ object SessionManager {
         return prefs.getString(KEY_LOGIN_TYPE, null)
     }
 
-    // kakaoAccessToken 저장/조회 (선택이지만 지금 구조에선 필요)
+    // 카카오 SDK 전용
     fun saveKakaoAccessToken(context: Context, token: String) {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         prefs.edit().putString(KEY_KAKAO_ACCESS_TOKEN, token).apply()
@@ -52,6 +52,7 @@ object SessionManager {
         return prefs.getString(KEY_LOGIN_ID, null)
     }
 
+    //서버용
     fun saveAccessToken( context: Context, token: String) {
         val prefs = context.getSharedPreferences(PREF_NAME,Context.MODE_PRIVATE)
         prefs.edit()
