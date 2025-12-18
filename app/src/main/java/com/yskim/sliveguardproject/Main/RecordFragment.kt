@@ -13,10 +13,17 @@ import com.ksensordevicedesign.ksensorproject.util.setOnSingleClickListener
 import com.yskim.sliveguardproject.databinding.FragmentRecordBinding
 import com.yskim.sliveguardproject.record.RecordAdapter
 import com.yskim.sliveguardproject.record.RecordRow
+import com.yskim.sliveguardproject.record.room.AppDb
+import com.yskim.sliveguardproject.record.room.HrRecordEntity
+import com.yskim.sliveguardproject.wear.DrowsyStateBus
 import com.yskim.sliveguardproject.wear.HrvBus
 import com.yskim.sliveguardproject.wear.VitalsBus
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import java.time.LocalTime
 
 class RecordFragment : Fragment() {
     private var _binding: FragmentRecordBinding? = null
@@ -26,6 +33,18 @@ class RecordFragment : Fragment() {
 
     private val today: LocalDate = LocalDate.now()
     private var currentDate: LocalDate = LocalDate.now()
+
+    private val dao by lazy { AppDb.get(requireContext()).hrRecordDao() }
+
+    private val liveRows = mutableListOf<RecordRow>()
+
+    private var winSum = 0
+    private var winCnt = 0
+    private var winMin = Int.MAX_VALUE
+    private var winMax = Int.MIN_VALUE
+    private var latestBpm: Int? = null
+
+    private var latestStage: String = "정상"
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
@@ -51,6 +70,8 @@ class RecordFragment : Fragment() {
             }
         }
         renderDay(currentDate)
+
+        startMinuteRecorder()
 
 //        // Test : 실시간 데이터 표시
 //        viewLifecycleOwner.lifecycleScope.launch {
@@ -83,6 +104,84 @@ class RecordFragment : Fragment() {
 //        }
     }
 
+    private fun startMinuteRecorder() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                val collectJob = launch {
+                    VitalsBus.state.collect { s ->
+                        val bpm = s.hrBpm ?: return@collect
+                        latestBpm = bpm
+                        winSum += bpm
+                        winCnt += 1
+                        winMin = minOf(winMin, bpm)
+                        winMax = maxOf(winMax, bpm)
+                    }
+                }
+
+                val tickJob = launch {
+                    while (true) {
+                        delay(60_000L)
+
+                        if (currentDate != today) {
+                            winSum = 0; winCnt = 0
+                            winMin = Int.MAX_VALUE; winMax = Int.MIN_VALUE
+                            continue
+                        }
+
+                        val avg = if (winCnt > 0) (winSum / winCnt) else (latestBpm ?: 0)
+                        val hhmm = LocalTime.now()
+                            .withSecond(0).withNano(0)
+                            .toString().substring(0, 5)
+
+                        val row = RecordRow(
+                            time = hhmm,
+                            hr = avg,
+//                            stage = "정상",
+                            stage = latestStage,
+//                            isAlert = false
+                            isAlert = (latestStage != "정상")
+                        )
+
+                        liveRows.add(0, row)
+
+                        val entity = HrRecordEntity(
+                            ts = System.currentTimeMillis(),
+                            date = today.toString(),
+                            time = row.time,
+                            hr = row.hr,
+                            stage = row.stage,
+                            isAlert = row.isAlert
+                        )
+                        launch(Dispatchers.IO) {
+                            dao.upsert(entity)
+                        }
+
+                        val rowsNow = liveRows.toList()
+                        adapter.submit(rowsNow)
+                        updateTopStatsFromRows(liveRows)
+
+//                        val newList = listOf(row) + emptyList()
+//                        adapter.submit(newList)
+
+                        winSum = 0; winCnt = 0
+                        winMin = Int.MAX_VALUE; winMax = Int.MIN_VALUE
+                    }
+                }
+
+                launch {
+                    DrowsyStateBus.state.collect { st ->
+                        if (st != null) {
+                            latestStage = st.stage
+                        }
+                    }
+                }
+
+                collectJob.join()
+                tickJob.join()
+            }
+        }
+    }
+
     private fun renderDay(date: LocalDate) {
         binding.tvDate.text = "${date.year}년 ${date.monthValue}월 ${date.dayOfMonth}일"
 
@@ -90,21 +189,46 @@ class RecordFragment : Fragment() {
         binding.btnNextDay.isEnabled = canGoNext
         binding.btnNextDay.alpha = if (canGoNext) 1.0f else 0.35f
 
-        // TODO(서버 준비되면): data로 서버 조회해서 rows를 받아오기
-        val rows = fakeRows()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val list = withContext(Dispatchers.IO) {
+                dao.listByDate(date.toString())
+            }
 
-        val hrs = rows.map { it.hr }
-        val avg = if (hrs.isNotEmpty()) hrs.average().toInt() else 0
-        val min = hrs.minOrNull() ?: 0
-        val max = hrs.maxOrNull() ?: 0
-        val current = hrs.firstOrNull() ?: 0
+            val rows = list.map {
+                RecordRow(
+                    time = it.time,
+                    hr = it.hr,
+                    stage = it.stage,
+                    isAlert = it.isAlert
+                )
+            }
 
-        binding.tvAvgHr.text = "${avg} bpm"
-        binding.tvMinHr.text = "${min} bpm"
-        binding.tvMaxHr.text = "${max} bpm"
-        binding.tvCurrentHr.text = "${current} bpm"
+            if (date == today) {
+                liveRows.clear()
+                liveRows.addAll(rows)
+            }
 
-        adapter.submit(rows)
+            updateTopStatsFromRows(rows)
+            adapter.submit(rows)
+        }
+
+
+//        val rows = if (date == today) liveRows.toList() else fakeRows()
+
+//        val hrs = rows.map { it.hr }
+//        val avg = if (hrs.isNotEmpty()) hrs.average().toInt() else 0
+//        val min = hrs.minOrNull() ?: 0
+//        val max = hrs.maxOrNull() ?: 0
+//        val current = hrs.firstOrNull() ?: 0
+//
+//        binding.tvAvgHr.text = "${avg} bpm"
+//        binding.tvMinHr.text = "${min} bpm"
+//        binding.tvMaxHr.text = "${max} bpm"
+//        binding.tvCurrentHr.text = "${current} bpm"
+
+
+//        updateTopStatsFromRows(rows)
+//        adapter.submit(rows)
     }
 
     // 더미 데이터 (최신 위로 오게)
@@ -118,6 +242,19 @@ class RecordFragment : Fragment() {
             RecordRow("09:40", 79, "정상", false),
             RecordRow("09:30", 75, "정상", false),
         )
+    }
+
+    private fun updateTopStatsFromRows(rows: List<RecordRow>) {
+        val hrs = rows.map { it.hr }
+        val avg = if (hrs.isNotEmpty()) hrs.average().toInt() else 0
+        val min = hrs.minOrNull() ?: 0
+        val max = hrs.maxOrNull() ?: 0
+        val current = hrs.firstOrNull() ?: 0
+
+        binding.tvAvgHr.text = "${avg} bpm"
+        binding.tvMinHr.text = "${min} bpm"
+        binding.tvMaxHr.text = "${max} bpm"
+        binding.tvCurrentHr.text = "${current} bpm"
     }
 
     override fun onDestroyView() {

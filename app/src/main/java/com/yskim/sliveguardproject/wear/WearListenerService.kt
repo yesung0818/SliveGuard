@@ -34,7 +34,6 @@ class WearListenerService : WearableListenerService() {
         when (e.path) {
             "/start_measure" -> {
                 Log.d("WearRx", "Baseline reset by WATCH command")
-//                HrvBus.reset()
                 DrowsyMonitoringService.startMeasure(applicationContext)
             }
             "/stop_measure" -> {
@@ -49,15 +48,18 @@ class WearListenerService : WearableListenerService() {
                 val json = e.data?.toString(Charsets.UTF_8).orEmpty()
                 DeviceBus.updateFromJson(json)
             }
+            else -> {
+                Log.d(TAG, "Unknown path=${e.path} size=${e.data?.size ?: -1}")
+            }
         }
-//        Log.d(TAG, "onMessageReceived path=${e.path} from=${e.sourceNodeId} size=${e.data?.size}")
-        if (e.path.startsWith("/hr")) {
-//            val raw = e.data?.decodeToString()
-//            val bpm = raw?.toIntOrNull()
-            val bpm = e.data?.decodeToString()?.toIntOrNull()
-            Log.i(TAG, "HR received: $bpm")
-            bpm?.let { HrBus.post(it) }
-        }
+        // 12.18 주석
+//        if (e.path.startsWith("/hr")) {
+////            val raw = e.data?.decodeToString()
+////            val bpm = raw?.toIntOrNull()
+//            val bpm = e.data?.decodeToString()?.toIntOrNull()
+//            Log.i(TAG, "HR received: $bpm")
+//            bpm?.let { HrBus.post(it) }
+//        }
     }
 
     private fun handleHr(bytes: ByteArray) {
@@ -76,48 +78,68 @@ class WearListenerService : WearableListenerService() {
     }
 
     private fun safeHandleHr(bytes: ByteArray) {
-        try {
-            val now = System.currentTimeMillis()
+        val raw = bytes.toString(Charsets.UTF_8).orEmpty().trim()
+        Log.i(TAG, "HR raw='$raw' bytes=${bytes.size ?: -1}")
 
-            if (bytes.size >= 12) {
-                val bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
-                val ts  = bb.long
-                val bpm = bb.int
-                VitalsBus.postHr(ts, bpm)
-                return
-            }
+        val firstToken = raw.substringBefore("|").trim()
 
-            // v2: [int bpm] (4 bytes, LE)
-            if (bytes.size == 4) {
-                val bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
-                val bpm = bb.int
-                VitalsBus.postHr(now, bpm)
-                return
-            }
+        val bpm = firstToken.toIntOrNull()
+            ?: firstToken.toFloatOrNull()?.toInt()
 
-            // v1: ASCII 숫자 ("100" 같은) 또는 1바이트/2바이트 케이스
-            val str = runCatching { String(bytes, Charsets.UTF_8).trim() }.getOrNull()
-            val bpmFromAscii = str?.toIntOrNull()
-            if (bpmFromAscii != null) {
-                VitalsBus.postHr(now, bpmFromAscii)
-                return
-            }
-
-            if (bytes.size == 1) { // unsigned byte
-                val bpm = bytes[0].toInt() and 0xFF
-                VitalsBus.postHr(now, bpm)
-                return
-            }
-            if (bytes.size == 2) { // unsigned short, LE
-                val bb = ByteBuffer.wrap(bytes + byteArrayOf(0,0)).order(ByteOrder.LITTLE_ENDIAN)
-                val bpm = bb.int and 0xFFFF
-                VitalsBus.postHr(now, bpm)
-                return
-            }
-            Log.w(TAG,"Unknown /hr payload size=${bytes.size}")
-        } catch (t: Throwable) {
-            Log.e(TAG, "safeHandleHr error size=${bytes.size}", t)
+        if (bpm == null) {
+            Log.w(TAG, "HR parse failed: raw='$raw'")
+            return
         }
+
+        Log.i(TAG, "HR parsed=$bpm")
+
+        HrBus.post(bpm)
+
+        VitalsBus.postHr(System.currentTimeMillis(), bpm)
+
+        // 12.18 주석
+//        try {
+//            val now = System.currentTimeMillis()
+//
+//            if (bytes.size >= 12) {
+//                val bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+//                val ts  = bb.long
+//                val bpm = bb.int
+//                VitalsBus.postHr(ts, bpm)
+//                return
+//            }
+//
+//            // v2: [int bpm] (4 bytes, LE)
+//            if (bytes.size == 4) {
+//                val bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+//                val bpm = bb.int
+//                VitalsBus.postHr(now, bpm)
+//                return
+//            }
+//
+//            // v1: ASCII 숫자 ("100" 같은) 또는 1바이트/2바이트 케이스
+//            val str = runCatching { String(bytes, Charsets.UTF_8).trim() }.getOrNull()
+//            val bpmFromAscii = str?.toIntOrNull()
+//            if (bpmFromAscii != null) {
+//                VitalsBus.postHr(now, bpmFromAscii)
+//                return
+//            }
+//
+//            if (bytes.size == 1) { // unsigned byte
+//                val bpm = bytes[0].toInt() and 0xFF
+//                VitalsBus.postHr(now, bpm)
+//                return
+//            }
+//            if (bytes.size == 2) { // unsigned short, LE
+//                val bb = ByteBuffer.wrap(bytes + byteArrayOf(0,0)).order(ByteOrder.LITTLE_ENDIAN)
+//                val bpm = bb.int and 0xFFFF
+//                VitalsBus.postHr(now, bpm)
+//                return
+//            }
+//            Log.w(TAG,"Unknown /hr payload size=${bytes.size}")
+//        } catch (t: Throwable) {
+//            Log.e(TAG, "safeHandleHr error size=${bytes.size}", t)
+//        }
     }
 
     private fun safeHandleIbi(bytes: ByteArray) {

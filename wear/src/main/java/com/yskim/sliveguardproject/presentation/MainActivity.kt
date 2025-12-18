@@ -13,10 +13,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.health.services.client.HealthServices
+import androidx.lifecycle.lifecycleScope
 import androidx.wear.widget.ArcLayout
 import com.yskim.sliveguardproject.R
 import com.yskim.sliveguardproject.databinding.ActivityHrBinding
 import com.yskim.sliveguardproject.presentation.service.VitalsService
+import com.yskim.sliveguardproject.presentation.state.WatchDrowsyStateStore
+import com.yskim.sliveguardproject.presentation.state.WatchHrBus
 import com.yskim.sliveguardproject.presentation.util.WearTx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -79,6 +82,12 @@ class MainActivity : AppCompatActivity() {
         binding.btnToggle.setOnClickListener {
             if (isMeasuring) stopMeasuring() else startMeasuring()
         }
+
+        lifecycleScope.launchWhenCreated {
+            WatchHrBus.bpm.collect { v ->
+                binding.tvHr.text = v?.let { "$it bpm" } ?: "-- bpm"
+            }
+        }
     }
 
     private fun startMeasuring() {
@@ -98,25 +107,18 @@ class MainActivity : AppCompatActivity() {
 
         // OS 버전에 따라 모드 분기
 //        if (Build.VERSION.SDK_INT <= 34) {
-        if (Build.VERSION.SDK_INT <= 32) {
-            // 워치4 → 서비스 모드 (화면 꺼져도)
-            canBackgroundMeasure = true
-            startServiceMode()
-        } else {
-            // 워치6 → 화면 켜진 상태 모드만
-            canBackgroundMeasure = false
-            startForegroundOnlyMode()
-        }
+//        if (Build.VERSION.SDK_INT <= 32) {
+//            // 워치4 → 서비스 모드 (화면 꺼져도)
+//            canBackgroundMeasure = true
+//            startServiceMode()
+//        } else {
+//            // 워치6 → 화면 켜진 상태 모드만
+//            canBackgroundMeasure = false
+//            startForegroundOnlyMode()
+//        }
 
-        // 여기까지 왔다는 건 OS 버전에 맞는 심박 권한은 다 허용된 상태
-
-        // HR 측정 서비스 시작 (화면 꺼져도 유지)
-//        val svcIntent = Intent(this, VitalsService::class.java)
-//        ContextCompat.startForegroundService(this, svcIntent)
-//
-//        binding.tvStatus.text = "측정 중...(서비스)"
-//        binding.btnToggle.text = "측정 종료"
-//        isMeasuring = true
+        canBackgroundMeasure = true
+        startServiceMode()
     }
 
     private fun stopMeasuring() {
@@ -125,9 +127,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             stopForegroundOnlyMode()
         }
-//        repo.stop()
-//        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-//        stopService(Intent(this, VitalsService::class.java))
         binding.tvStatus.text = "정지됨"
         binding.btnToggle.text = "측정 시작"
         isMeasuring = false
@@ -178,7 +177,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopServiceMode() {
-        stopService(Intent(this, VitalsService::class.java))
+        VitalsService.stop(this)
+
+//        stopService(Intent(this, VitalsService::class.java))
 
         WearTx.sendMessage(this, "/stop_measure", ByteArray(0))
 

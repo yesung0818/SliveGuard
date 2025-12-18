@@ -12,6 +12,7 @@ import com.google.android.gms.common.api.Scope
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
 import com.yskim.sliveguardproject.R
+import com.yskim.sliveguardproject.presentation.state.WatchDrowsyStateStore
 
 class DrowsyWatchListenerService : WearableListenerService() {
 
@@ -22,7 +23,9 @@ class DrowsyWatchListenerService : WearableListenerService() {
         val parts = text.split("|")
         val state = parts.getOrNull(0) ?: return
         val score = parts.getOrNull(1) ?: "?"
-        // val ts = parts.getOrNull(2)
+         val ts = parts.getOrNull(2)?.toLongOrNull() ?: System.currentTimeMillis()
+
+        WatchDrowsyStateStore.post(this, state, score, ts)
 
         showNotification(state, score)
         vibrate(state)

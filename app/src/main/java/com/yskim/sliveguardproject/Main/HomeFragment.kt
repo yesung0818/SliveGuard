@@ -61,15 +61,19 @@ class HomeFragment : Fragment() {
                 launch {
                     HrvBus.state.collect { st ->
                         val measuring = SessionManager.isMeasuring(requireContext())
-                        binding.tvDrowsyStatus.text = when {
-                            !measuring -> "대기 중 (워치에서 측정 시작을 누르세요)"
-                            !st.isBaselineReady -> "준비 중 (베이스라인 측정 중, 약 3분)"
-                            else -> "측정 중"
+                        if (!measuring) {
+                            binding.tvDrowsyStatus.text = "대기 중 (워치에서 측정 시작을 누르세요)"
+                            return@collect
                         }
-//                        if (!st.isBaselineReady) {
-//                            binding.tvDrowsyStatus.text = "준비 중 (베이스라인 측정 중, 약 3분)"
-//                        } else {
-//                            binding.tvDrowsyStatus.text = "측정 중"
+
+                        binding.tvDrowsyStatus.text =
+                            if (!st.isBaselineReady) "준비 중 (베이스라인 측정 중, 약 3분)"
+                            else "측정 중"
+
+//                        binding.tvDrowsyStatus.text = when {
+//                            !measuring -> "대기 중 (워치에서 측정 시작을 누르세요)"
+//                            !st.isBaselineReady -> "준비 중 (베이스라인 측정 중, 약 3분)"
+//                            else -> "측정 중"
 //                        }
                     }
                 }

@@ -15,6 +15,7 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.yskim.sliveguardproject.R
+import com.yskim.sliveguardproject.presentation.state.WatchHrBus
 import com.yskim.sliveguardproject.presentation.util.WearTx
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -33,6 +34,12 @@ class VitalsService : Service(), SensorEventListener {
     private var lastValidBpm: Int = -1
     private var lastValidBpmTsMs: Long = 0L
     private val HOLD_MS = 3_000L
+
+    companion object {
+        fun stop(ctx: Context) {
+            ctx.stopService(Intent(ctx, VitalsService::class.java))
+        }
+    }
 
     override fun onBind(intent: Intent?): IBinder? {
         TODO("Not yet implemented")
@@ -55,6 +62,10 @@ class VitalsService : Service(), SensorEventListener {
         }
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_NOT_STICKY
+    }
+
     override fun onSensorChanged(event: SensorEvent) {
         Log.d("Vitals", "HR event: ${event.values.firstOrNull()}")
         val nowMs = SystemClock.elapsedRealtime()
@@ -75,7 +86,10 @@ class VitalsService : Service(), SensorEventListener {
 //                heartRate = event.values.firstOrNull() ?: return
                 lastValidBpm = bpm
                 lastValidBpmTsMs = nowMs
-                sendHrNow(heartRate.toInt(), nowMs)
+//                sendHrNow(heartRate.toInt(), nowMs)
+
+                WatchHrBus.post(bpm)
+                sendHrNow(bpm, nowMs)
 
                 if (!hasHeartBeatSensor()) {
 //                    val approxIbi = (60000f / max(heartRate, 1f)).toInt()
@@ -117,7 +131,10 @@ class VitalsService : Service(), SensorEventListener {
         val bb = ByteBuffer.allocate(12).order(ByteOrder.LITTLE_ENDIAN)
         bb.putLong(tsMs)
         bb.putInt(bpm)
-        WearTx.sendMessage(this, "/hr", bb.array())
+        val payload = "$bpm|$tsMs"
+//        WearTx.sendMessage(this, "/hr", bb.array())
+        WearTx.sendMessage(this, "/hr", payload.toByteArray())
+
     }
 
     private fun sendIbiBatch(ibis: List<Int>, ts0Ms: Long) {
@@ -133,6 +150,7 @@ class VitalsService : Service(), SensorEventListener {
 
     override fun onDestroy() {
         sensorManager.unregisterListener(this)
+        stopForeground(STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
 

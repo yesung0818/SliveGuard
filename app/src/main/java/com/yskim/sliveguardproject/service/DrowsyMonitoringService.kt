@@ -16,6 +16,7 @@ import com.yskim.sliveguardproject.login.SessionManager
 import com.yskim.sliveguardproject.network.auth.AuthApiClient
 import com.yskim.sliveguardproject.network.auth.StartStopMeasurementRequest
 import com.yskim.sliveguardproject.network.auth.VideoScorePostRequest
+import com.yskim.sliveguardproject.wear.DrowsyStateBus
 import com.yskim.sliveguardproject.wear.HrvBus
 import com.yskim.sliveguardproject.wear.PhoneWearTx
 import kotlinx.coroutines.CoroutineScope
@@ -90,34 +91,53 @@ class DrowsyMonitoringService: Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val action = intent?.action
         Log.d("DROWSY", "onStartCommand action=${intent?.action}")
-        when (intent?.action) {
+
+        if (action == null) {
+            SessionManager.setMeasuring(this, false)
+            updateNotification("대기 중 (워치 시작 버튼을 누르세요)")
+            loopsRunning = false
+            measureJob?.cancel()
+            measureJob = null
+            return START_STICKY
+        }
+
+        when (action) {
             ACTION_START_MEASURE -> {
                 if (!loopsRunning) {
                     if (measureJob?.isActive == true) return START_STICKY
+
                     SessionManager.setMeasuring(this, true)
+                    updateNotification("준비 중 (베이스라인 측정 중, 약 3분)")
+
                     loopsRunning = true
                     measureJob = scope.launch { startLoops() }
 //                    startLoops()
                 }
             }
             ACTION_STOP_MEASURE -> {
-                SessionManager.setMeasuring(this, false)
-                loopsRunning = false
-                measureJob?.cancel()
-                measureJob = null
-
-                val loginId = SessionManager.getLoginId(this)
-                if (!loginId.isNullOrBlank()) {
-                    scope.launch(Dispatchers.IO) { callStopMeasurement(loginId) }
-                }
-                updateNotification("대기 중 (워치 시작 버튼을 누르세요)")
+                stopMeasuringInternal()
+//                SessionManager.setMeasuring(this, false)
+//                loopsRunning = false
+//                measureJob?.cancel()
+//                measureJob = null
+//
+//                val loginId = SessionManager.getLoginId(this)
+//                if (!loginId.isNullOrBlank()) {
+//                    scope.launch(Dispatchers.IO) { callStopMeasurement(loginId) }
+//                }
+//                updateNotification("대기 중 (워치 시작 버튼을 누르세요)")
             }
         }
         return START_STICKY
     }
 
     override fun onDestroy() {
+        SessionManager.setMeasuring(this, false)
+        loopsRunning = false
+        measureJob?.cancel()
+        measureJob = null
         scope.cancel()
         super.onDestroy()
     }
@@ -211,6 +231,20 @@ class DrowsyMonitoringService: Service() {
 
     }
 
+    private fun stopMeasuringInternal() {
+        SessionManager.setMeasuring(this, false)
+        loopsRunning = false
+        measureJob?.cancel()
+        measureJob = null
+
+        val loginId = SessionManager.getLoginId(this)
+        if (!loginId.isNullOrBlank()) {
+            scope.launch(Dispatchers.IO) { callStopMeasurement(loginId) }
+        }
+
+        updateNotification("대기 중 (워치 시작 버튼을 누르세요)")
+    }
+
     private fun addHrvSample(ts: Long, v: Double) {
         synchronized(hrvBuf) {
             if (hrvBuf.size >= 300) hrvBuf.removeFirst()
@@ -230,9 +264,15 @@ class DrowsyMonitoringService: Service() {
         // TODO: 임계값은 너희 기준으로 튜닝
         val state = when {
             score >= 0.8 -> "졸음"
-            score >= 0.6 -> "주의"
+            score >= 0.5 -> "주의"
             else -> "정상"
         }
+
+        DrowsyStateBus.post(
+            stage = state,
+            score = score,
+            ts = videoTs
+        )
 
         // 알림 업데이트
         updateNotification("상태: $state (score=${"%.2f".format(score)})")

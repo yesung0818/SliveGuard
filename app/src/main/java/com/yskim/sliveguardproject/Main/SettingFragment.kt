@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -19,10 +20,13 @@ import com.ksensordevicedesign.ksensorproject.util.setOnSingleClickListener
 import com.yskim.sliveguardproject.R
 import com.yskim.sliveguardproject.databinding.FragmentSettingsBinding
 import com.yskim.sliveguardproject.login.SessionManager
+import com.yskim.sliveguardproject.record.room.AppDb
 import com.yskim.sliveguardproject.service.DrowsyMonitoringService
 import com.yskim.sliveguardproject.ui.LoginActivity
 import com.yskim.sliveguardproject.wear.DeviceBus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
@@ -30,6 +34,10 @@ class SettingFragment : Fragment() {
 
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
+
+    private val dao by lazy {
+        AppDb.get(requireContext()).hrRecordDao()
+    }
 
 
 
@@ -141,16 +149,29 @@ class SettingFragment : Fragment() {
             pickImageLauncher.launch("image/*")
         }
 
-        // Device 카드 클릭 시: 워치 연결 화면 열기 등
         binding.layoutDevice.setOnClickListener {
-            // TODO: 워치 디바이스 관리 화면 열기
-            Toast.makeText(requireContext(), "디바이스 설정(추후 구현)", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(requireContext(), "디바이스 설정(추후 구현)", Toast.LENGTH_SHORT).show()
         }
 
         // 전체 데이터 삭제
         binding.layoutDeleteAll.setOnClickListener {
-            // TODO: 서버/로컬 DB 데이터 삭제 로직 추가
-            Toast.makeText(requireContext(), "전체 데이터 삭제 (추후 구현)", Toast.LENGTH_SHORT).show()
+            AlertDialog.Builder(requireContext())
+                .setTitle("전체 기록 삭제")
+                .setMessage(
+                    "저장된 모든 심박수 기록이 삭제됩니다.\n" +
+                            "이 작업은 되돌릴 수 없습니다.\n\n" +
+                            "정말 삭제하시겠습니까?"
+                )
+                .setPositiveButton("삭제") {_, _ ->
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        withContext(Dispatchers.IO) {
+                            dao.deleteAll()
+                        }
+                        Toast.makeText(requireContext(), "모든 기록이 삭제되었습니다", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("취소", null)
+                .show()
         }
 
         binding.btnLogout.setOnClickListener {
