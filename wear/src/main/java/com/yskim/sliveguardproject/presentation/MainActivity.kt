@@ -15,6 +15,9 @@ import androidx.core.content.ContextCompat
 import androidx.health.services.client.HealthServices
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.widget.ArcLayout
+import com.google.android.gms.wearable.MessageClient
+import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.Wearable
 import com.yskim.sliveguardproject.R
 import com.yskim.sliveguardproject.databinding.ActivityHrBinding
 import com.yskim.sliveguardproject.presentation.service.VitalsService
@@ -32,7 +35,7 @@ import kotlin.jvm.java
 private const val TAG = "HR-WEAR"
 private const val REQ_SENSORS = 1001
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListener {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var binding : ActivityHrBinding
@@ -55,6 +58,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityHrBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        ensureNotiPermission()
 
         Log.d(TAG, "SDK_INT=${Build.VERSION.SDK_INT}")
 
@@ -86,6 +91,34 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launchWhenCreated {
             WatchHrBus.bpm.collect { v ->
                 binding.tvHr.text = v?.let { "$it bpm" } ?: "-- bpm"
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Wearable.getMessageClient(this).addListener(this)
+        Log.w("WATCH_RX", "addListener()")
+    }
+
+    override fun onPause() {
+        Wearable.getMessageClient(this).removeListener(this)
+        Log.w("WATCH_RX", "removeListener()")
+        super.onPause()
+    }
+
+    override fun onMessageReceived(event: MessageEvent) {
+        Log.w("WATCH_RX", "ACTIVITY RECV path=${event.path} payload=${event.data.toString(Charsets.UTF_8)}")
+    }
+
+    private val reqNotiPerm =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { }
+
+    private fun ensureNotiPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            val perm = android.Manifest.permission.POST_NOTIFICATIONS
+            if (checkSelfPermission(perm) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                reqNotiPerm.launch(perm)
             }
         }
     }
@@ -171,7 +204,7 @@ class MainActivity : AppCompatActivity() {
         WearTx.sendMessage(this, "/start_measure", ByteArray(0))
         WearTx.sendDeviceInfo(this)
 
-        binding.tvStatus.text = "측정 중...(백그라운드 지원)"
+        binding.tvStatus.text = "측정 중..."
         binding.btnToggle.text = "측정 종료"
         isMeasuring = true
     }
@@ -230,6 +263,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+
+        WearTx.sendMessage(this, "/stop_measure", ByteArray(0))
         repo.stop()
         scope.cancel()
     }

@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.wearable.MessageEvent
@@ -17,17 +18,24 @@ import com.yskim.sliveguardproject.presentation.state.WatchDrowsyStateStore
 class DrowsyWatchListenerService : WearableListenerService() {
 
     override fun onMessageReceived(event: MessageEvent) {
+        Log.d("WATCH_RX", "path=${event.path} size=${event.data.size}")
+        Log.d("WATCH_RX", "path=${event.path} payload=${event.data.toString(Charsets.UTF_8)}")
         if (event.path != "/drowsy_state") return
 
         val text = event.data.toString(Charsets.UTF_8)
+        Log.d("WATCH_RX", "payload=$text")
         val parts = text.split("|")
         val state = parts.getOrNull(0) ?: return
         val score = parts.getOrNull(1) ?: "?"
          val ts = parts.getOrNull(2)?.toLongOrNull() ?: System.currentTimeMillis()
 
+        if (state != "졸음") return
+
         WatchDrowsyStateStore.post(this, state, score, ts)
 
-        showNotification(state, score)
+//        showNotification("state", score)
+        showNotification("졸음", score)
+
         vibrate(state)
     }
 

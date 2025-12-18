@@ -207,7 +207,7 @@
             android:id="@+id/tvSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="10분 간격 기록"
+            android:text="1분 간격 기록"
             android:textStyle="bold"
             android:textSize="14sp"
             android:textColor="#111111"

@@ -101,12 +101,44 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:text="Data"
+        android:text="데이터"
         android:textStyle="bold"
         android:textSize="14sp"
         android:textColor="#222222"
         app:layout_constraintTop_toBottomOf="@id/layoutDevice"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/layoutExportData"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:visibility="gone"
+        android:background="@drawable/bg_setting_item"
+        app:layout_constraintTop_toBottomOf="@id/tvDataTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:id="@+id/imgExport"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_export"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/tvExportTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:text="데이터 내보내기"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:textColor="@color/black" />
+    </LinearLayout>
 
     <!-- 전체 데이터 삭제 카드 -->
     <LinearLayout
@@ -118,7 +150,7 @@
         android:gravity="center_vertical"
         android:paddingHorizontal="16dp"
         android:background="@drawable/bg_setting_item"
-        app:layout_constraintTop_toBottomOf="@id/tvDataTitle"
+        app:layout_constraintTop_toBottomOf="@id/layoutExportData"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 

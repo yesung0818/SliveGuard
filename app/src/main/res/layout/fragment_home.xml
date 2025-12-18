@@ -75,7 +75,8 @@
         android:id="@+id/tvLastSync"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="마지막 동기화: 오전 2:32"
+        android:text="마지막 동기화: --"
+        android:visibility="gone"
         android:textSize="13sp"
         android:textColor="#6B7280"
         app:layout_constraintTop_toBottomOf="@id/tvTitle"
@@ -133,7 +134,7 @@
         android:id="@+id/tvDrowsyStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="대기 중"
+        android:text=""
         app:layout_constraintTop_toBottomOf="@id/btnConnection"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>

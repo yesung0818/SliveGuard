@@ -46,6 +46,8 @@ class RecordFragment : Fragment() {
 
     private var latestStage: String = "정상"
 
+    private var hasHrInThisMinute = false
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         _binding = FragmentRecordBinding.inflate(inflater, container, false)
@@ -73,35 +75,13 @@ class RecordFragment : Fragment() {
 
         startMinuteRecorder()
 
-//        // Test : 실시간 데이터 표시
-//        viewLifecycleOwner.lifecycleScope.launch {
-//            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-//                launch {
-//                    VitalsBus.state.collect { s ->
-//                        binding.tvHr.text = "HR — ${s.hrBpm?.toString() ?: "--"} bpm"
-//                        binding.tvIbi.text = "IBI — ${s.lastIbiMs?.toString() ?: "--"} ms"
-//                        binding.tvIbiRecent.text =
-//                            "최근 IBI 5개: " + (if (s.recentIbiMs.isEmpty()) "-" else s.recentIbiMs.joinToString(", ") + " ms")
-//                    }
-//                }
-//                launch {
-//                    HrvBus.state.collect { h ->
-//                        binding.tvHrvScore.text = h.sHrv?.let { String.format("%.2f", it) ?: "--"}
-//                        binding.tvHrvBase.text   = "기준 RMSSD=${h.baselineRmssdMs?.toInt() ?: 0} ms, SDNN=${h.baselineSdnnMs?.toInt() ?: 0} ms"
-//                        binding.tvHrvCurrent.text= "현재 RMSSD=${h.currentRmssdMs?.toInt() ?: 0} ms, SDNN=${h.currentSdnnMs?.toInt() ?: 0} ms"
-//
-//                         val status = when {
-//                             h.sHrv == null -> "기준 측정 중"
-//                             h.sHrv < 0.4   -> "정상"
-//                             h.sHrv < 0.6   -> "주의"
-//                             else           -> "졸음 의심"
-//                         }
-//                         binding.tvHrvStatus.text = status
-//                    }
-//                }
-//
-//            }
-//        }
+        parentFragmentManager.setFragmentResultListener(
+            "records_cleared",
+            viewLifecycleOwner
+        ) { _, _ ->
+            liveRows.clear()
+            renderDay(currentDate)
+        }
     }
 
     private fun startMinuteRecorder() {
@@ -111,6 +91,7 @@ class RecordFragment : Fragment() {
                     VitalsBus.state.collect { s ->
                         val bpm = s.hrBpm ?: return@collect
                         latestBpm = bpm
+                        hasHrInThisMinute = true
                         winSum += bpm
                         winCnt += 1
                         winMin = minOf(winMin, bpm)
@@ -121,6 +102,11 @@ class RecordFragment : Fragment() {
                 val tickJob = launch {
                     while (true) {
                         delay(60_000L)
+                        if (!hasHrInThisMinute) {
+                            winSum = 0; winCnt = 0
+                            winMin = Int.MAX_VALUE; winMax = Int.MIN_VALUE
+                            continue
+                        }
 
                         if (currentDate != today) {
                             winSum = 0; winCnt = 0
@@ -165,6 +151,8 @@ class RecordFragment : Fragment() {
 
                         winSum = 0; winCnt = 0
                         winMin = Int.MAX_VALUE; winMax = Int.MIN_VALUE
+
+                        hasHrInThisMinute = false
                     }
                 }
 
@@ -232,17 +220,17 @@ class RecordFragment : Fragment() {
     }
 
     // 더미 데이터 (최신 위로 오게)
-    private fun fakeRows(): List<RecordRow> {
-        return listOf(
-            RecordRow("10:20", 76, "정상", false),
-            RecordRow("10:10", 80, "정상", false),
-            RecordRow("10:04", 72, "졸음 1단계", true),
-            RecordRow("10:00", 77, "정상", false),
-            RecordRow("09:50", 77, "정상", false),
-            RecordRow("09:40", 79, "정상", false),
-            RecordRow("09:30", 75, "정상", false),
-        )
-    }
+//    private fun fakeRows(): List<RecordRow> {
+//        return listOf(
+//            RecordRow("10:20", 76, "정상", false),
+//            RecordRow("10:10", 80, "정상", false),
+//            RecordRow("10:04", 72, "졸음 1단계", true),
+//            RecordRow("10:00", 77, "정상", false),
+//            RecordRow("09:50", 77, "정상", false),
+//            RecordRow("09:40", 79, "정상", false),
+//            RecordRow("09:30", 75, "정상", false),
+//        )
+//    }
 
     private fun updateTopStatsFromRows(rows: List<RecordRow>) {
         val hrs = rows.map { it.hr }

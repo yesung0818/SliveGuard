@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface HrRecordDao {
@@ -15,4 +16,7 @@ interface HrRecordDao {
 
     @Query("DELETE FROM hr_record")
     suspend fun deleteAll()
+
+    @Query("SELECT * FROM hr_record WHERE date = :date ORDER BY ts DESC")
+    fun flowByDate(date: String): Flow<List<HrRecordEntity>>
 }

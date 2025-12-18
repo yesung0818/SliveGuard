@@ -167,6 +167,10 @@ class SettingFragment : Fragment() {
                         withContext(Dispatchers.IO) {
                             dao.deleteAll()
                         }
+                        parentFragmentManager.setFragmentResult(
+                            "records_cleared",
+                            Bundle().apply { putLong("ts", System.currentTimeMillis()) }
+                        )
                         Toast.makeText(requireContext(), "모든 기록이 삭제되었습니다", Toast.LENGTH_SHORT).show()
                     }
                 }

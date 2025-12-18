@@ -255,16 +255,31 @@ class DrowsyMonitoringService: Service() {
     private var lastSentState: String? = null
     private var lastSentAt = 0L
 
+    private fun normalizeVideo(sVideo: Double): Double {
+        val x = sVideo.coerceIn(0.0, 1.0)
+        return when {
+            x < 0.4 -> (x / 0.4) * 0.6
+            else -> 0.6 + ((x - 0.4) / 0.6) * 0.4
+        }.coerceIn(0.0, 1.0)
+    }
+
     private fun onVideoSample(videoTs: Long, sVideo: Double) {
         val h = nearestHrv(videoTs) ?: return
         if (abs(videoTs - h.ts) > TOLERANCE_MS) return // 너무 시간 차이 크면 패스
 
-        val score = h.v * 0.3 + sVideo * 0.7
+        val vVideo = normalizeVideo(sVideo)
+        val score = h.v * 0.3 + vVideo * 0.7
+//        val score = h.v * 0.3 + sVideo * 0.7
 
-        // TODO: 임계값은 너희 기준으로 튜닝
+//        val state = when {
+//            score >= 0.8 -> "졸음"
+//            score >= 0.5 -> "주의"
+//            else -> "정상"
+//        }
+
         val state = when {
-            score >= 0.8 -> "졸음"
-            score >= 0.5 -> "주의"
+            sVideo >= 0.5 || score >= 0.75 -> "졸음"
+            sVideo >= 0.4 || score >= 0.55 -> "주의"
             else -> "정상"
         }
 
@@ -274,6 +289,7 @@ class DrowsyMonitoringService: Service() {
             ts = videoTs
         )
 
+        Log.d("DROWSY", "측정 결과값 : state=$state score=${"%.2f".format(score)} (s_video=${"%.2f".format(sVideo)} hrv=${"%.2f".format(h.v)})")
         // 알림 업데이트
         updateNotification("상태: $state (score=${"%.2f".format(score)})")
 
@@ -284,7 +300,7 @@ class DrowsyMonitoringService: Service() {
             lastSentAt = now
             val payload = "$state|${"%.2f".format(score)}|$videoTs"
             PhoneWearTx.sendToWatch(applicationContext, "/drowsy_state", payload.toByteArray())
-
+            PhoneWearTx.sendToWatch(applicationContext, "/ping", "hello".toByteArray())
         }
 
     }
