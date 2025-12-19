@@ -78,7 +78,15 @@ class DrowsyWatchListenerService : WearableListenerService() {
         if (!vibrator.hasVibrator()) return
 
         val pattern = when (state) {
-            "졸음" -> longArrayOf(0, 400, 150, 400, 150, 700)
+//            "졸음" -> longArrayOf(0, 400, 150, 400, 150, 700)
+            "졸음" -> longArrayOf(
+                0,
+                1200, 200,
+                1200, 200,
+                1200, 200,
+                1200
+            )
+
             "주의" -> longArrayOf(0, 250, 150, 250)
             else -> longArrayOf(0, 80)
         }

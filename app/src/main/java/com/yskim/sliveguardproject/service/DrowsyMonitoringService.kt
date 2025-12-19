@@ -27,6 +27,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.log
@@ -155,7 +156,13 @@ class DrowsyMonitoringService: Service() {
 //        scope.launch(Dispatchers.IO) {
 //            callStartMeasurement(loginId)
 //        }
-        launch(Dispatchers.IO) { callStartMeasurement(loginId) }
+        launch(Dispatchers.IO) {
+            try {
+                callStartMeasurement(loginId)
+            } catch (e: Exception) {
+                Log.e("DROWSY", "callStartMeasurement failed", e)
+            }
+        }
 
         // 1) s_hrv 계산 및 버퍼링 루프
 //        scope.launch {
@@ -184,6 +191,39 @@ class DrowsyMonitoringService: Service() {
                 } catch (_: Exception) {
                     AuthApiClient.api.postVideoScore(VideoScorePostRequest(loginId, now))
                 }
+
+//                val res = try {
+//                    AuthApiClient.api.getVideoScore(loginId, now)
+//                } catch (e: HttpException) {
+//                    when (e.code()) {
+//                        404, 409 -> AuthApiClient.api.postVideoScore(VideoScorePostRequest(loginId, now))
+//                        else -> throw e
+//                    }
+//                } catch (e: Exception) {
+//                    throw e
+//                }
+
+//                val res = try {
+//                    AuthApiClient.api.getVideoScore(loginId, now)
+//                } catch (e: Exception) {
+//                    Log.e("DROWSY", "video-score GET failed", e)
+//                    delay(POLL_MS)
+//                    continue@polling
+//                }
+
+//                val result = runCatching {
+//                    AuthApiClient.api.getVideoScore(loginId, now)
+//                }.recoverCatching {
+//                    AuthApiClient.api.postVideoScore(VideoScorePostRequest(loginId, now))
+//                }
+//
+//                if (result.isFailure) {
+//                    Log.e("DROWSY", "video-score fetch failed (get+post)", result.exceptionOrNull())
+//                    delay(POLL_MS)
+//                    continue@polling
+//                }
+//
+//                val res = result.getOrThrow()
 
                 val videoTs = res.ts ?: now
 
@@ -239,7 +279,13 @@ class DrowsyMonitoringService: Service() {
 
         val loginId = SessionManager.getLoginId(this)
         if (!loginId.isNullOrBlank()) {
-            scope.launch(Dispatchers.IO) { callStopMeasurement(loginId) }
+            scope.launch(Dispatchers.IO) {
+                try {
+                    callStopMeasurement(loginId)
+                }catch (e: Exception) {
+                    Log.e("DROWSY", "callStopMeasurement failed", e)
+                }
+            }
         }
 
         updateNotification("대기 중 (워치 시작 버튼을 누르세요)")
@@ -258,8 +304,14 @@ class DrowsyMonitoringService: Service() {
     private fun normalizeVideo(sVideo: Double): Double {
         val x = sVideo.coerceIn(0.0, 1.0)
         return when {
-            x < 0.4 -> (x / 0.4) * 0.6
-            else -> 0.6 + ((x - 0.4) / 0.6) * 0.4
+            // 0.4 졸음 기준
+//            x < 0.4 -> (x / 0.4) * 0.6
+//            else -> 0.6 + ((x - 0.4) / 0.6) * 0.4
+
+            // 0.6 졸음 기준
+            x < 0.3 -> x / 0.3 * 0.3
+            x < 0.6 -> 0.3 + (x - 0.3) / 0.3 * 0.4
+            else -> 0.7 + (x - 0.6) / 0.4 * 0.3
         }.coerceIn(0.0, 1.0)
     }
 
@@ -267,7 +319,8 @@ class DrowsyMonitoringService: Service() {
         val h = nearestHrv(videoTs) ?: return
         if (abs(videoTs - h.ts) > TOLERANCE_MS) return // 너무 시간 차이 크면 패스
 
-        val vVideo = normalizeVideo(sVideo)
+//        val vVideo = normalizeVideo(sVideo)
+        val vVideo = sVideo.coerceIn(0.0, 1.0)
         val score = h.v * 0.3 + vVideo * 0.7
 //        val score = h.v * 0.3 + sVideo * 0.7
 
@@ -277,9 +330,24 @@ class DrowsyMonitoringService: Service() {
 //            else -> "정상"
 //        }
 
+        // 0.4 졸음 기준
+//        val state = when {
+//            sVideo >= 0.5 || score >= 0.75 -> "졸음"
+//            sVideo >= 0.4 || score >= 0.55 -> "주의"
+//            else -> "정상"
+//        }
+
+        // 0.6 졸음 기준
+//        val state = when {
+//            sVideo >= 0.6 -> "졸음"
+//            sVideo >= 0.3 || score >= 0.55 -> "주의"
+//            else -> "정상"
+//        }
+
+        //데모 버전
         val state = when {
-            sVideo >= 0.5 || score >= 0.75 -> "졸음"
-            sVideo >= 0.4 || score >= 0.55 -> "주의"
+            sVideo >= 0.50 || score >= 0.65 -> "졸음"
+            sVideo >= 0.25 || score >= 0.50 -> "주의"
             else -> "정상"
         }
 
@@ -300,7 +368,6 @@ class DrowsyMonitoringService: Service() {
             lastSentAt = now
             val payload = "$state|${"%.2f".format(score)}|$videoTs"
             PhoneWearTx.sendToWatch(applicationContext, "/drowsy_state", payload.toByteArray())
-            PhoneWearTx.sendToWatch(applicationContext, "/ping", "hello".toByteArray())
         }
 
     }
